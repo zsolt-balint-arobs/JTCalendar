@@ -96,6 +96,11 @@
     for(int i = 0; i < NUMBER_OF_DAY_BY_WEEK; ++i){
         UILabel *label =  _dayViews[i];
         label.text = days[i];
+		if (i == 0 || i == NUMBER_OF_DAY_BY_WEEK - 1) {
+			label.textColor = [UIColor lightGrayColor];
+		} else {
+			label.textColor = [UIColor blackColor];
+		}
     }
 }
 
