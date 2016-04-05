@@ -57,7 +57,7 @@
             currentMonthIndex += 12;
         }
         
-        text = [[dateFormatter standaloneMonthSymbols][currentMonthIndex - 1] capitalizedString];
+		text = [[dateFormatter stringFromDate:date] capitalizedString];
     }
         
     [(UILabel *)menuItemView setText:text];
