@@ -51,7 +51,8 @@
 
         dateFormatter.timeZone = _manager.dateHelper.calendar.timeZone;
         dateFormatter.locale = _manager.dateHelper.calendar.locale;
-        
+		dateFormatter.dateFormat = @"MMMM yyyy";
+
         while(currentMonthIndex <= 0){
             currentMonthIndex += 12;
         }
