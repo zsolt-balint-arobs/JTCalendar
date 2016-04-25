@@ -20,6 +20,8 @@
 
 @interface JTCalendarManager : NSObject
 
+@property (nonatomic, strong) NSLocale *locale;
+
 @property (nonatomic, weak) id<JTCalendarDelegate> delegate;
 
 @property (nonatomic, weak) UIView<JTMenu> *menuView;

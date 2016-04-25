@@ -67,9 +67,10 @@
         [self addSubview:_weekDayView];
         
         _weekDayView.manager = _manager;
-        [_weekDayView reload];
     }
-    
+
+	[_weekDayView reload];
+
     if(!_weeksViews){
         _weeksViews = [NSMutableArray new];
         

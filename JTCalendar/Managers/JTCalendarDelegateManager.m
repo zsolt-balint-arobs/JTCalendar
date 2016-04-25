@@ -1,165 +1,85 @@
 //
-//  JTCalendarDelegateManager.m
+//  JTCalendarManager.m
 //  JTCalendar
 //
 //  Created by Jonathan Tribouharet
 //
 
-#import "JTCalendarDelegateManager.h"
-
 #import "JTCalendarManager.h"
 
-#import "JTCalendarPageView.h"
-#import "JTCalendarWeekDayView.h"
-#import "JTCalendarWeekView.h"
-#import "JTCalendarDayView.h"
+#import "JTHorizontalCalendarView.h"
 
-@implementation JTCalendarDelegateManager
+@implementation JTCalendarManager
 
-#pragma mark - Menu view
-
-- (UIView *)buildMenuItemView
+- (instancetype)init
 {
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendarBuildMenuItemView:)]){
-        return [_manager.delegate calendarBuildMenuItemView:self.manager];
-    }
-    
-    UILabel *label = [UILabel new];
-    label.textAlignment = NSTextAlignmentCenter;
-    
-    return label;
+	self = [super init];
+	if(!self){
+		return nil;
+	}
+
+	[self commonInit];
+
+	return self;
 }
 
-- (void)prepareMenuItemView:(UIView *)menuItemView date:(NSDate *)date
+- (void)commonInit
 {
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendar:prepareMenuItemView:date:)]){
-        [_manager.delegate calendar:self.manager prepareMenuItemView:menuItemView date:date];
-        return;
-    }
-    
-    NSString *text = nil;
-    
-    if(date){
-        NSCalendar *calendar = _manager.dateHelper.calendar;
-        NSDateComponents *comps = [calendar components:NSCalendarUnitYear|NSCalendarUnitMonth fromDate:date];
-        NSInteger currentMonthIndex = comps.month;
-        
-        static NSDateFormatter *dateFormatter = nil;
-        if(!dateFormatter){
-            dateFormatter = [_manager.dateHelper createDateFormatter];
-        }
+	_dateHelper = [JTDateHelper new];
+	_settings = [JTCalendarSettings new];
 
-        dateFormatter.timeZone = _manager.dateHelper.calendar.timeZone;
-        dateFormatter.locale = _manager.dateHelper.calendar.locale;
-		dateFormatter.dateFormat = @"MMMM yyyy";
+	_delegateManager = [JTCalendarDelegateManager new];
+	_delegateManager.manager = self;
 
-        while(currentMonthIndex <= 0){
-            currentMonthIndex += 12;
-        }
-        
-		text = [[dateFormatter stringFromDate:date] capitalizedString];
-    }
-        
-    [(UILabel *)menuItemView setText:text];
+	_scrollManager = [JTCalendarScrollManager new];
+	_scrollManager.manager = self;
 }
 
-#pragma mark - Content view
-
-- (UIView<JTCalendarPage> *)buildPageView
+- (void)setContentView:(UIScrollView<JTContent> *)contentView
 {
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendarBuildPageView:)]){
-        return [_manager.delegate calendarBuildPageView:self.manager];
-    }
-    
-    return [JTCalendarPageView new];
+	[_contentView setManager:nil];
+	self->_contentView = contentView;
+	[_contentView setManager:self];
+
+	// Can only synchronise JTHorizontalCalendarView
+	if([_contentView isKindOfClass:[JTHorizontalCalendarView class]]){
+		_scrollManager.horizontalContentView = _contentView;
+	}
+	else{
+		_scrollManager.horizontalContentView = nil;
+	}
 }
 
-- (BOOL)canDisplayPageWithDate:(NSDate *)date
+- (void)setMenuView:(UIScrollView<JTMenu> *)menuView
 {
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendar:canDisplayPageWithDate:)]){
-        return [_manager.delegate calendar:self.manager canDisplayPageWithDate:date];
-    }
-    
-    return YES;
+	[_menuView setManager:nil];
+	self->_menuView = menuView;
+	[_menuView setManager:self];
+
+	_scrollManager.menuView = _menuView;
 }
 
-- (NSDate *)dateForPreviousPageWithCurrentDate:(NSDate *)currentDate
+- (NSDate *)date
 {
-    NSAssert(currentDate != nil, @"currentDate cannot be nil");
-    
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendar:dateForPreviousPageWithCurrentDate:)]){
-        return [_manager.delegate calendar:self.manager dateForPreviousPageWithCurrentDate:currentDate];
-    }
-    
-    if(_manager.settings.weekModeEnabled){
-        return [_manager.dateHelper addToDate:currentDate weeks:-1];
-    }
-    else{
-        return [_manager.dateHelper addToDate:currentDate months:-1];
-    }
+	return _contentView.date;
 }
 
-- (NSDate *)dateForNextPageWithCurrentDate:(NSDate *)currentDate
+- (void)setDate:(NSDate *)date
 {
-    NSAssert(currentDate != nil, @"currentDate cannot be nil");
-    
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendar:dateForNextPageWithCurrentDate:)]){
-        return [_manager.delegate calendar:self.manager dateForNextPageWithCurrentDate:currentDate];
-    }
-    
-    if(_manager.settings.weekModeEnabled){
-        return [_manager.dateHelper addToDate:currentDate weeks:1];
-    }
-    else{
-        return [_manager.dateHelper addToDate:currentDate months:1];
-    }
+	[_contentView setDate:date];
 }
 
-#pragma mark - Page view
+- (void)setLocale:(NSLocale *)locale {
+	if (_locale != locale) {
+		_locale = locale;
 
-- (UIView<JTCalendarWeekDay> *)buildWeekDayView
-{
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendarBuildWeekDayView:)]){
-        return [_manager.delegate calendarBuildWeekDayView:self.manager];
-    }
-    
-    return [JTCalendarWeekDayView new];
+		[self setDate:_contentView.date];
+	}
 }
 
-- (UIView<JTCalendarWeek> *)buildWeekView
+- (void)reload
 {
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendarBuildWeekView:)]){
-        return [_manager.delegate calendarBuildWeekView:self.manager];
-    }
-    
-    return [JTCalendarWeekView new];
-}
-
-#pragma mark - Week view
-
-- (UIView<JTCalendarDay> *)buildDayView
-{
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendarBuildDayView:)]){
-        return [_manager.delegate calendarBuildDayView:self.manager];
-    }
-    
-    return [JTCalendarDayView new];
-}
-
-#pragma mark - Day view
-
-- (void)prepareDayView:(UIView<JTCalendarDay> *)dayView
-{
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendar:prepareDayView:)]){
-        [_manager.delegate calendar:self.manager prepareDayView:dayView];
-    }
-}
-
-- (void)didTouchDayView:(UIView<JTCalendarDay> *)dayView
-{
-    if(_manager.delegate && [_manager.delegate respondsToSelector:@selector(calendar:didTouchDayView:)]){
-        [_manager.delegate calendar:self.manager didTouchDayView:dayView];
-    }
+	[_contentView setDate:_contentView.date];
 }
 
 @end

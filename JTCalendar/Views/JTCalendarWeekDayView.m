@@ -62,8 +62,8 @@
     NSMutableArray *days = nil;
     
     dateFormatter.timeZone = _manager.dateHelper.calendar.timeZone;
-    dateFormatter.locale = _manager.dateHelper.calendar.locale;
-    
+	dateFormatter.locale = _manager.locale;
+
     switch(_manager.settings.weekDayFormat) {
         case JTCalendarWeekDayFormatSingle:
             days = [[dateFormatter veryShortStandaloneWeekdaySymbols] mutableCopy];
